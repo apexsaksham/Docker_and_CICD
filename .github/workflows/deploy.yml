@@ -3,24 +3,31 @@ name: Deploy Python app to EC2
 on:
   push:
     branches:
-     - master
-
+      - master
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-        steps:
-          - name: Checkout Code
-            uses: actions/checkout@v4
-
-          - name: Deploy via SSH
-            uses: appleboy/ssh-action@v1.0.3
-            with: 
-               host: ${{secrets.EC2_HOST}}
-               username: ubuntu
-               key: ${{secrets.EC2_SSH_KEY}}
-               script: |
-                 cd /home/ubuntu/Docker_and_CICD
-                 git pull origin master
-                 sudo docker compose up -d --build
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with: 
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Create directory if it doesn't exist (prevents cd error)
+            mkdir -p /home/ubuntu/Docker_and_CICD
+            cd /home/ubuntu/Docker_and_CICD
+            
+            # Initialize git if the folder is empty
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/apexsaksham/Docker_and_CICD.git .
+            else
+              git pull origin master
+            fi
+            
+            sudo docker compose up -d --build
